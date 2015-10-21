@@ -1,0 +1,38 @@
+#include<stdio.h>
+#include<stdlib.h>
+voidmain(){
+int year, month, days;
+printf("输入年份：");
+scanf("%d",&year);
+printf("输入月份：");
+scanf("%d",&month);
+switch(month){
+case1:
+case3:
+case5:
+case7:
+case8:
+case10:
+case12:
+            days=31;
+break;
+case4:
+case6:
+case9:
+case11:
+            days=30;
+break;
+case2:
+// 判断闰年
+if(year%4==0&& year%100!=0|| year%400==0)
+                days=29;
+else
+                days=28;
+break;
+default:
+printf("月份输入错误！\n");
+exit(1);
+break;
+}
+printf("天数：%d\n", days);
+}
