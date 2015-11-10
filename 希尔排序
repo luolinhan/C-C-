@@ -1,0 +1,211 @@
+/*******************************************************************************
+/* <PRE>
+/* 版权所有    : -
+/* 模块名      : 希尔排序
+/* 文件名      : ShellSort.cpp
+/* 功能描述    : 按增量序列分组进行直接插入排序, 最后对整个序列进行一趟直接插入排序
+/* 作者        : <xxx>
+/* 版本        : 1.0
+/* -----------------------------------------------------------------------------
+/* 备注        : 示例序列为 {49, 38, 65, 97, 76, 13, 27, 49, 55, 04}
+/* -----------------------------------------------------------------------------
+/* 修改记录    :
+/* 日 期        版本     修改人        修改内容
+/* 2011/01/01   1.0      <xxx>         创建
+/* </PRE>
+*******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+
+
+/******************************************************************************
+/* 数据类型和常量定义
+/******************************************************************************/
+#define TURE         1
+#define FALSE        0
+#define OK           1
+#define ERROR        0
+#define OVERFLOW    -2
+
+typedef int Status;
+typedef int KeyType;
+
+#define LT(a, b) ((a) < (b))
+
+
+/******************************************************************************
+/* 数据结构声明
+/******************************************************************************/
+#define LIST_INIT_SIZE 20
+#define LISTINCREMENT  10
+
+typedef struct {
+    KeyType key;
+}ElemType;
+
+typedef struct {
+    ElemType *r;
+    int length;
+    int listsize;
+} SqList;
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ShellInsert
+/* 功能     : 
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对顺序表L作一趟希尔插入排序, 前后记录位置的增量是dk, 而不是1
+/*            r[0]只是暂存单元, 不是哨兵
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void ShellInsert(SqList &L, int dk) {
+    int i = 0;  int j = 0;
+    for (i = dk + 1; i <= L.length; ++i) {
+        if (LT(L.r[i].key, L.r[i-dk].key)) {
+            L.r[0] = L.r[i];
+            for (j = i - dk; j > 0 && LT(L.r[0].key, L.r[j].key); j -= dk)
+                L.r[j+dk] = L.r[j];
+            L.r[j+dk] = L.r[0];
+        }
+    }
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ShellSort
+/* 功能     : 希尔排序
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 按增量序列delta[0..t-1]对顺序表L作希尔排序
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void ShellSort(SqList &L, int delta[], int t) {
+    for (int k = 0; k < t; ++k)
+        ShellInsert(L, delta[k]); //一趟增量为delta[k]的插入排序
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListInit
+/* 功能     : 初始化列表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListInit(SqList &L) {
+    L.r = (ElemType *)malloc(LIST_INIT_SIZE * sizeof(ElemType));
+    if (!L.r) exit(OVERFLOW);
+    L.length = 0;
+    L.listsize = LIST_INIT_SIZE;
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListInsert
+/* 功能     : 构造无序序列
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : L.r[0]用于哨兵
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListInsert(SqList &L, int i, ElemType e) {
+    ElemType *newbase = NULL;
+    ElemType *p = NULL;
+    ElemType *q = NULL;
+    if (i <1 || i >L.length + 1) return ERROR;
+    if (L.length >= L.listsize) {
+        newbase = (ElemType *)realloc(L.r, (L.listsize + LISTINCREMENT) * sizeof(ElemType));
+        if (!newbase) exit(OVERFLOW);
+        L.r = newbase;
+        L.listsize += LISTINCREMENT;
+    }
+    q = &(L.r[i]);
+    for (p = &(L.r[L.length]); p >= q; --p) *(p + 1) = *p;
+    
+    *q = e;
+    ++L.length;
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListTraverse
+/* 功能     : 遍历线性表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListTraverse(SqList &L, Status (*Visit)(ElemType)) {
+    ElemType *p = NULL;
+    ElemType *q = NULL;
+    if (L.length == 0) return ERROR;
+    p = &(L.r[1]);
+    q = L.r + L.length;
+    for (; p <= q; ++p) Visit(*p);
+    printf("\n");
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : Visit
+/* 功能     : 访问元素
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status Visit(ElemType e)
+{
+    printf("%d ", e.key);
+    return OK;
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    SqList L;  ListInit(L); ElemType e;
+    int delta[] = {5, 3, 1};
+
+    //生成初始序列
+    e.key = 49; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 27; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 13; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 76; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 97; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 65; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 38; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 49; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 55; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    e.key = 04; if (OK == ListInsert(L, 1, e)) printf("insert ok!\n");
+    
+    printf("\nBefore ShellSort: ");
+    ListTraverse(L, Visit);
+    
+    //希尔排序
+    ShellSort(L, delta, 3);
+    printf("After SellSort: ");
+    ListTraverse(L, Visit);
+}
