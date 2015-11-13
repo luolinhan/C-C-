@@ -1,0 +1,285 @@
+/*******************************************************************************
+/* <PRE>
+/* 版权所有    : -
+/* 模块名      : 查找
+/* 文件名      : avlTree.cpp
+/* 功能描述    : 平衡二叉树
+/* 作者        : <xxx>
+/* 版本        : 1.0
+/* -----------------------------------------------------------------------------
+/* 备注        : -
+/* -----------------------------------------------------------------------------
+/* 修改记录    :
+/* 日 期        版本     修改人        修改内容
+/* 2011/01/01   1.0      <xxx>         创建
+/* </PRE>
+*******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+
+/******************************************************************************
+/* 数据类型和常量定义
+/******************************************************************************/
+#define TRUE        1
+#define FALSE       0
+#define OK          1
+#define ERROR       0
+
+#define LH          1 /* 左高 */ 
+#define EH          0 /* 等高 */
+#define RH         -1 /* 右高 */
+
+typedef int   Status;
+typedef int   KeyType;
+typedef unsigned char Boolean;
+
+/* 数值型关键字的比较 */
+#define EQ(a, b) ((a) == (b))
+#define LT(a, b) ((a) < (b))
+
+
+/******************************************************************************
+/* 数据结构定义
+/******************************************************************************/
+typedef struct {
+    KeyType key;
+}ElemType;
+
+/* 二叉排序树的类型定义 */
+typedef struct BSTNode {
+    ElemType data;
+    int bf; /* 结点的平衡因子 */
+    struct BSTNode *lchild, *rchild; /* 左右孩子指针 */
+} BSTNode, *BSTree;
+
+
+/******************************************************************************
+/* 函数原型声明
+/******************************************************************************/
+void R_Rotate(BSTree &p);
+void L_Rotate(BSTree &p);
+void RightBalance(BSTree &T);
+void LeftBalance(BSTree &T);
+Status InsertAVL(BSTree &T, ElemType e, Boolean &taller);
+
+Status Visit(ElemType e);
+Status InOrderTraverse(BSTree &T, Status (*Visit)(ElemType));
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : R_Rotate
+/* 功能     : 右旋处理
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对以*p为根的二叉排序树作右旋处理, 处理之后p指向新的树根结点, 即
+/*            旋转处理之前的左子树的根结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void R_Rotate(BSTree &p)
+{
+    BSTree lc;
+    lc = p->lchild;                //lc指向的*p的左子树根结点
+    p->lchild = lc->rchild;        //lc的右子树挂接为*p的左子树
+    lc->rchild = p;  p = lc;       //p指向新的根结点
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : L_Rotate
+/* 功能     : 左旋处理
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对以*p为根的二叉排序树作左旋处理, 处理之后p指向新的树根结点, 即
+/*            旋转处理之前的右子树的根结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void L_Rotate(BSTree &p)
+{
+    BSTree rc;
+    rc = p->rchild;                //rc指向的*p的右子树根结点
+    p->rchild = rc->lchild;        //rc的左子树挂接为*p的右子树
+    rc->lchild = p;  p = rc;       //p指向新的根结点
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InsertBST
+/* 功能     : 插入元素到二叉排序树中
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 当二叉排序树T中不存在关键字等于e.key的数据元素时, 插入e并返回TRUE,
+/*            否则返回FALSE
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status InsertAVL(BSTree &T, ElemType e, Boolean &taller)
+{
+    if (!T) { //插入新结点, 树长高, taller为TRUE
+        T = (BSTree)malloc(sizeof(BSTNode));  T->data = e;
+        T->lchild = T->rchild = NULL;  T->bf = EH;  taller = TRUE;
+    }
+    else {
+        if (EQ(e.key, T->data.key)) { taller = FALSE;  return 0; }  //树中已存在和e有相同关键字的结点, 则不再插入
+        if (LT(e.key, T->data.key)) {    //应继续在*T的左子树中进行搜索
+            if (!InsertAVL(T->lchild, e, taller)) return 0;  //未插入
+            if (taller) //已插入到*T的左子树中且左子树长高
+                switch (T->bf) {  //检查*T的平衡度
+                   case LH: //原本左子树比右子树高, 需要做左平衡处理
+                      LeftBalance(T); taller = FALSE; break;
+                   case EH: //原本左、右子树等高, 现因左子树增高而使树增高
+                      T->bf = LH; taller = TRUE; break;
+                   case RH: //原本右子树比左子树高, 现在左、右子树等高
+                      T->bf = EH; taller = FALSE; break;
+            }
+        }
+        else {  //应继续在*T的右子树中进行搜索
+            if (!InsertAVL(T->rchild, e, taller)) return 0;  //未插入
+            if (taller)  //已插入到*T的右子树中且右子树长高
+                switch (T->bf) {  //检查*T的平衡度
+                   case LH: //原本左子树比右子树高, 现在左、右子树等高
+                      T->bf = EH; taller = FALSE; break;
+                   case EH: //原本左、右子树等高, 现因右子树增高而使树增高
+                      T->bf = RH; taller = TRUE; break;
+                   case RH: //原本右子树比左子树高, 需要做右平衡处理
+                      RightBalance(T); taller = FALSE; break;
+            }
+        }
+    }
+
+    return 1;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : LeftBalance
+/* 功能     : 左平衡旋转处理
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对以指针T所指结点为根的二叉树作左平衡旋转处理, 本算法结束时, 指针
+/*            T指向新的根结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void LeftBalance(BSTree &T)
+{
+    BSTree lc;  BSTree rd;
+    lc = T->lchild;             //lc指向*T的左子树根结点
+    switch (lc->bf)             //检查*T的左子树的平衡度, 并作相应平衡处理
+    {
+    case LH:                    //新结点插入在*T的左孩子的左子树上, 要作单右旋处理
+        T->bf = lc->bf = EH;
+        R_Rotate(T);  break;
+    case RH:                    //新结点插入在*T的左孩子的右子树上, 要作双旋处理
+        rd = lc->rchild;        //rd指向*T人左孩子的右子树根
+        switch (rd->bf)         //修正*T及其左孩子的平衡因子
+        {
+            case LH:  T->bf = RH;  lc->bf = EH;  break;
+            case EH:  T->bf = lc->bf = EH;       break;
+            case RH:  T->bf = EH;  lc->bf = LH;  break;
+        }
+        rd->bf = EH;
+        L_Rotate(T->lchild);    //对*T的左子树作左旋平衡处理
+        R_Rotate(T);            //对*T作右旋平衡处理
+    }
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : RightBalance
+/* 功能     : 右平衡旋转处理
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对以指针T所指结点为根的二叉树作右平衡旋转处理, 本算法结束时, 指针
+/*            T指向新的根结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void RightBalance(BSTree &T)
+{
+    BSTree rc;  BSTree ld;
+    rc = T->rchild;             //lc指向*T的右子树根结点
+    switch (rc->bf)             //检查*T的右子树的平衡度, 并作相应平衡处理
+    {
+    case RH:                    //新结点插入在*T的右孩子的左子树上, 要作单左旋处理
+        T->bf = rc->bf = EH;
+        L_Rotate(T);  break;
+    case LH:                    //新结点插入在*T的右孩子的右子树上, 要作双旋处理
+        ld = rc->lchild;        //ld指向*T人右孩子的右子树根
+        switch (ld->bf)         //修正*T及其右孩子的平衡因子
+        {
+        case RH:  T->bf = RH;  rc->bf = EH;  break;
+        case EH:  T->bf = rc->bf = EH;       break;
+        case LH:  T->bf = EH;  rc->bf = LH;  break;
+        }
+        ld->bf = EH;
+        R_Rotate(T->rchild);    //对*T的右子树作右旋平衡处理
+        L_Rotate(T);            //对*T作左旋平衡处理
+    }
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : Visit
+/* 功能     : 打印节点数据
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status Visit(ElemType e)
+{
+    printf("%d ", e.key);
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InOrderTraverse
+/* 功能     : 中序遍历二叉树
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status InOrderTraverse(BSTree &T, Status (*Visit)(ElemType))
+{
+    if(T){
+        if(InOrderTraverse(T->lchild, Visit))
+            if(Visit(T->data))
+                if(InOrderTraverse(T->rchild, Visit))
+                    return OK;
+                return ERROR;
+    }
+    else
+        return OK;
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    BSTree T; ElemType e;  Boolean taller;
+    T = NULL; 
+    e.key = 13;  InsertAVL(T, e, taller);
+    e.key = 24;  InsertAVL(T, e, taller);
+    e.key = 37;  InsertAVL(T, e, taller);
+    e.key = 90;  InsertAVL(T, e, taller);
+    e.key = 53;  InsertAVL(T, e, taller);
+
+    InOrderTraverse(T, Visit);
+}
