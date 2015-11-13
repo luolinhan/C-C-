@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+/******************************************************************************
+/* 数据类型和常量定义
+/******************************************************************************/
+#define TURE         1
+#define FALSE        0
+#define OK           1
+#define ERROR        0
+#define OVERFLOW    -2
+
+typedef int Status;
+typedef int KeyType;
+
+#define LT(a, b) ((a) < (b))
+
+
+/******************************************************************************
+/* 数据结构声明
+/******************************************************************************/
+#define LIST_INIT_SIZE 20
+#define LISTINCREMENT  10
+
+typedef struct {
+    KeyType key;
+}ElemType;
+
+typedef struct {
+    ElemType *r;
+    int length;
+    int listsize;
+} SqList;
+
+typedef SqList HeapType;   /* 采用顺序表存储表示 */
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : HeapAdjust
+/* 功能     : 调整记录
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 已知H.r[s..m]中记录的关键字除H.r[s].key之外均满足堆的定义, 本函数
+/*            调整H.r[s]的关键字, 使H.r[s..m]成为一个大顶堆 (对记录中的关键字而言)
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void HeapAdjust(HeapType &H, int s, int m) {
+    ElemType rc = H.r[s];
+    for (int j = 2 * s; j <= m; j *= 2) {  //沿key较大的孩子结点向下筛选
+        if (j < m && LT(H.r[j].key, H.r[j+1].key)) ++j; //j为key较大的记录的下标
+        if (!LT(rc.key, H.r[j].key))  break; //rc应插入在位置s上
+        H.r[s] = H.r[j];  s = j;
+    }
+    H.r[s] = rc;   //插入
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : HeapSort
+/* 功能     : 堆排序
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 对顺序表H进行堆排序
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void HeapSort(HeapType &H) {
+    int i;  ElemType r;
+    for (i = H.length / 2; i > 0; --i) {  //把H.r[1...H.length]建成大顶堆
+        HeapAdjust(H, i, H.length);
+    }
+    for (i = H.length; i > 1; --i) {
+        //将堆顶记录和当前未经排序子序列H.r[1..i]中最后一个记录相互交换
+        r = H.r[1];  H.r[1] = H.r[i];   H.r[i] = r;
+        HeapAdjust(H, 1, i - 1);  //将H.r[1..i-1]重新调整为大顶堆
+    }
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListInit_H
+/* 功能     : 初始化列表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListInit_H(HeapType &H) {
+    H.r = (ElemType *)malloc(LIST_INIT_SIZE * sizeof(ElemType));
+    if (!H.r) exit(OVERFLOW);
+    H.length = 0;
+    H.listsize = LIST_INIT_SIZE;
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListInsert_H
+/* 功能     : 构造无序序列
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : H.r[0]不放元素, 方便堆排序
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListInsert_H(HeapType &H, int i, ElemType e) {
+    ElemType *newbase = NULL;
+    ElemType *p = NULL;
+    ElemType *q = NULL;
+    if (i <1 || i >H.length + 1) return ERROR;
+    if (H.length >= H.listsize) {
+        newbase = (ElemType *)realloc(H.r, (H.listsize + LISTINCREMENT) * sizeof(ElemType));
+        if (!newbase) exit(OVERFLOW);
+        H.r = newbase;
+        H.listsize += LISTINCREMENT;
+    }
+    q = &(H.r[i]);
+    for (p = &(H.r[H.length]); p >= q; --p) *(p + 1) = *p;
+    
+    *q = e;
+    ++H.length;
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : ListTraverse_H
+/* 功能     : 遍历线性表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status ListTraverse_H(HeapType &H, Status (*Visit)(ElemType)) {
+    ElemType *p = NULL;
+    ElemType *q = NULL;
+    if (H.length == 0) return ERROR;
+    p = &(H.r[1]);
+    q = H.r + H.length;
+    for (; p <= q; ++p) Visit(*p);
+    printf("\n");
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : Visit
+/* 功能     : 访问元素
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status Visit(ElemType e)
+{
+    printf("%d ", e.key);
+    return OK;
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    HeapType H;  ListInit_H(H); ElemType e;
+
+    //生成初始序列
+    e.key = 49; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 27; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 13; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 76; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 97; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 65; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 38; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+    e.key = 49; if (OK == ListInsert_H(H, 1, e)) printf("insert ok!\n");
+
+    printf("\nBefore Heap Sort: ");
+    ListTraverse_H(H, Visit);
+
+    //堆排序
+    HeapSort(H);
+    printf("After Heap Sort: ");
+    ListTraverse_H(H, Visit);
+}
