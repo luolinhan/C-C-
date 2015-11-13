@@ -1,0 +1,153 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+/******************************************************************************
+/* 数据类型和常量定义
+/******************************************************************************/
+#define SUCCESS             1
+#define UNSUCCESS           0
+#define DUPLICATE           -1
+
+typedef int   Status;
+typedef int   KeyType;
+
+#define EQ(a, b) ((a) == (b))
+#define LT(a, b) ((a) < (b))
+
+#define MAXSIZE       13           /* Hash表长 */
+#define HASH(key)  (key % MAXSIZE) /* Hash函数 */
+
+
+/******************************************************************************
+/* 数据结构定义
+/******************************************************************************/
+typedef struct {
+    KeyType key;
+}ElemType;
+
+/* 链结点 */
+typedef struct ChainNode {
+    ElemType data;
+    ChainNode *next;
+} ChainNode, *Chain;
+
+Chain ChainHash[MAXSIZE] = { NULL };
+
+/******************************************************************************
+/* 函数原型声明
+/******************************************************************************/
+Status SearchHash(Chain ChainHash[], KeyType key, Chain &p);
+Status InsertHash(Chain ChainHash[], ElemType e);
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : SearchHash
+/* 功能     : 查找Hash表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status SearchHash(Chain ChainHash[], KeyType key, Chain &p)
+{
+    ChainNode *tmp;   p = ChainHash[HASH(key)];
+    if (!p) return UNSUCCESS;
+    tmp = p->next;  p = tmp;
+    while (p && !EQ(key, p->data.key)) {
+        tmp = p;
+        p = p->next;
+    }
+    if (!p) {
+        p = tmp;   return UNSUCCESS;
+    }
+    else return SUCCESS;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InsertHash
+/* 功能     : 插入元素到Hash表
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status InsertHash(Chain ChainHash[], ElemType e)
+{
+    Chain p, q, r, pre;
+    if (SearchHash(ChainHash, e.key, p)) return DUPLICATE;
+    else {
+        q = (Chain)malloc(sizeof(ChainNode));  q->data = e;  q->next = NULL;
+        if (!p) { 
+            r = (Chain)malloc(sizeof(ChainNode));
+            r->data.key = 1;
+            r->next = q;
+            ChainHash[HASH(e.key)] = r;
+        }
+        else {
+            r = ChainHash[HASH(e.key)];   ++(r->data.key);
+            p = r->next;  pre = r;
+            while (p && LT(p->data.key, e.key)) {
+                pre = p; p = p->next;
+            }
+            q->next = pre->next;
+            pre->next = q;
+        }
+    }
+    return SUCCESS;
+}
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    char *rslt[3] = {
+        "duplicated!",
+        "unsuccess!",
+        "insert succeed!"
+    };
+
+    //插入数据到Hash表
+    ElemType e;
+    printf("\nInserting process: \n---------------------------------------------\n");
+    e.key = 19;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 19;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 14;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 23;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 01;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 68;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 20;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 84;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 27;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 55;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 11;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 10;  printf("%d %s \n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+    e.key = 79;  printf("%d %s \n\n", e.key, rslt[InsertHash(ChainHash, e) + 1]);
+
+    //输出Hash表
+    printf("Hash Table: \n---------------------------------------------\n");
+    for (int i = 0; i < MAXSIZE; i++) {
+        if (!ChainHash[i]) printf("index: %2d, elem_count (%2d )", i, 0);
+        else {
+            printf("index: %2d, elem_count (%2d ) ->", i, ChainHash[i]->data.key);
+            ChainNode *p = ChainHash[i]->next;
+            while (p)
+            {
+                printf(" %d ", p->data.key); p = p->next;
+            }
+        }
+        printf("\n");
+    }
+}
