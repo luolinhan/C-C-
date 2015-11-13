@@ -1,0 +1,291 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "union-find.h"
+
+/* 打印set */
+void printset(int id[]) 
+{
+    for (int i = 0; i < N; i++) 
+    {
+        printf("%d ", id[i]);
+    }
+    printf("\n");
+}
+
+
+/******************************************************************************
+/* 
+/* QuickFind
+/* 
+/* 数据结构：
+/* (1) 大小为N的整型数组id[]
+/* (2) p和q如果id相同则认为它们是连通的
+/*  
+/*  i      0  1  2  3  4  5  6  7  8  9
+/*  id[i]  0  1  2  9  9  6  6  7  8  9  //5和6是连通的; 2, 3, 4和9是连通的
+/*  
+/*  查找操作: 判断p和q的id值是否相同
+/*  合并操作: 将包含p的块和包含q的块合并成一个新的块, 所有id值等于id[p]的对象
+/*            将其id值设置成id[q]
+/*
+/******************************************************************************/
+void QuickFind::quick_find() 
+{
+    id = new int[N];
+    for (int i = 0; i < N; i++)  id[i] = i;
+}
+
+boolean QuickFind::find(int p, int q) 
+{
+    return id[p] == id[q];
+}
+
+
+void QuickFind::unite(int p, int q) {
+    int pid = id[p];
+    for (int i = 0; i < N; i++) {
+        if (id[i] == pid)
+            id[i] = id[q];
+    }
+}
+
+
+
+/******************************************************************************
+/* 
+/* QuickUnion
+/* 
+/* 数据结构：
+/* (1) 大小为N的整型数组id[]
+/* (2) id[i]是i的父亲
+/* (3) i的根是id[id[id[...id[i]...]]]
+/*  
+/*  i      0  1  2  3  4  5  6  7  8  9
+/*  id[i]  0  1  9  4  9  6  6  7  8  9
+/* 
+/*----------------------------------------------------------------------------
+/*    0   1   9   6   7   8
+/*           / \  |
+/*          2   4 5
+/*              |
+/*              3
+/*  3的根是9; 5的根是6
+/*----------------------------------------------------------------------------  
+/*  查找操作: 判断p和q的id的根是否相同
+/*  合并操作: 将q的根的id值设置成p的根的id值
+/*
+/******************************************************************************/
+void QuickUnion::quick_union() 
+{
+    id = new int[N];
+    for (int i = 0; i < N; i++)  id[i] = i;
+}
+
+int QuickUnion::root(int i)
+{
+    while (i != id[i]) i = id[i];  //时间正比于i的深度
+    return i;
+}
+
+boolean QuickUnion::find(int p, int q) 
+{
+    return root(p) == root(q);
+}
+
+void QuickUnion::unite(int p, int q) {
+    int i = root(p);
+    int j = root(q);
+    id[i] = j;
+}
+
+
+
+/******************************************************************************
+/* 
+/* WeightedQU
+/* 
+/* 数据结构：
+/* (1) 大小为N的整型数组id[]
+/* (2) id[i]是i的父亲
+/* (3) i的根是id[id[id[...id[i]...]]]
+/*  
+/*  i      0  1  2  3  4  5  6  7  8  9
+/*  id[i]  0  1  9  4  9  6  6  7  8  9
+/* 
+/*----------------------------------------------------------------------------
+/*    0   1   9   6   7   8
+/*           / \  |
+/*          2   4 5
+/*              |
+/*              3
+/*  3的根是9; 5的根是6
+/*----------------------------------------------------------------------------  
+/*  查找操作: 判断p和q的id的根是否相同
+/*  合并操作: 将成员较小的树并入较大的树
+/*            更新sz[]数组
+/*
+/******************************************************************************/
+WeightedQU::WeightedQU()
+{
+    for (int i = 0; i < N; i++)  sz[i] = 1;
+}
+
+void WeightedQU::weighted_qu() 
+{
+    id = new int[N];
+    for (int i = 0; i < N; i++)  id[i] = i;
+}
+
+int WeightedQU::root(int i)
+{
+    while (i != id[i]) i = id[i];  //时间正比于i的深度
+    return i;
+}
+
+boolean WeightedQU::find(int p, int q) 
+{
+    return root(p) == root(q);
+}
+
+void WeightedQU::unite(int p, int q) {
+    int i = root(p);
+    int j = root(q);
+    if (sz[i] <= sz[j]) {id[i] = j; sz[j] += sz[i];}
+    else if (sz[i] > sz[j]) {id[j] = i; sz[i] += sz[j];}
+}
+
+
+
+/******************************************************************************
+/* 
+/* WeightedQUPathCompress
+/* 
+/* 数据结构：
+/* (1) 大小为N的整型数组id[]
+/* (2) id[i]是i的父亲
+/* (3) i的根是id[id[id[...id[i]...]]]
+/*  
+/*  i      0  1  2  3  4  5  6  7  8  9
+/*  id[i]  0  1  9  4  9  6  6  7  8  9
+/* 
+/*----------------------------------------------------------------------------
+/*    0   1   9   6   7   8
+/*           / \  |
+/*          2   4 5
+/*              |
+/*              3
+/*  3的根是9; 5的根是6
+/*----------------------------------------------------------------------------  
+/*  查找操作: 判断p和q的id的根是否相同
+/*  合并操作: 将成员较小的树并入较大的树
+/*            更新sz[]数组
+/*            计算出i的根后, 将每一个检查过的节点的id值设置成root(i)
+/*
+/******************************************************************************/
+WQUPC::WQUPC()
+{
+    for (int i = 0; i < N; i++)  sz[i] = 1;
+}
+
+void WQUPC::wqu_pc() 
+{
+    id = new int[N];
+    for (int i = 0; i < N; i++)  id[i] = i;
+}
+
+int WQUPC::root(int i)
+{
+    while (i != id[i]) 
+    {
+        id[i] = id[id[i]];
+        i = id[i];
+    }
+    return i;
+}
+
+boolean WQUPC::find(int p, int q) 
+{
+    return root(p) == root(q);
+}
+
+void WQUPC::unite(int p, int q) {
+    int i = root(p);
+    int j = root(q);
+    if (sz[i] <= sz[j]) {id[i] = j; sz[j] += sz[i];}
+    else if (sz[i] > sz[j]) {id[j] = i; sz[i] += sz[j];}
+}
+
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    /*quick find*/
+    QuickFind qf;
+    printf("\nquick_find: \n\n");
+    qf.quick_find();  printf("%s", "original:   ");   printset(qf.id);
+
+    qf.unite(1, 0);  printf("unite(1,0): "); printset(qf.id);
+    qf.unite(2, 0);  printf("unite(2,0): "); printset(qf.id);
+    qf.unite(0, 3);  printf("unite(0,3): "); printset(qf.id);
+    qf.unite(4, 5);  printf("unite(4,5): "); printset(qf.id);
+    qf.unite(5, 6);  printf("unite(5,6): "); printset(qf.id);
+    qf.unite(7, 8);  printf("unite(7,8): "); printset(qf.id);
+
+    if (qf.find(0, 3)) printf("find: 0 and 3 %s", "in the same set!\n");
+    if (qf.find(4, 9)) printf("find: 4 and 9 %s", "in the same set!\n");
+
+    /*quick union*/
+    QuickUnion qu;
+    printf("\n\nquick_union: \n\n");
+    qu.quick_union();  printf("%s", "original:   ");   printset(qu.id);
+    
+    qu.unite(1, 0);  printf("unite(1,0): "); printset(qu.id);
+    qu.unite(2, 0);  printf("unite(2,0): "); printset(qu.id);
+    qu.unite(0, 3);  printf("unite(0,3): "); printset(qu.id);
+    qu.unite(4, 5);  printf("unite(4,5): "); printset(qu.id);
+    qu.unite(5, 6);  printf("unite(5,6): "); printset(qu.id);
+    qu.unite(7, 8);  printf("unite(7,8): "); printset(qu.id);
+    
+    if (qu.find(0, 3)) printf("find: 0 and 3 %s", "in the same set!\n");
+    if (qu.find(4, 9)) printf("find: 4 and 9 %s", "in the same set!\n");
+
+    /*weighted quick union*/
+    WeightedQU wqu;
+    printf("\n\nweighted quick union: \n\n");
+    wqu.weighted_qu();  printf("%s", "original:   ");   printset(wqu.id);
+    
+    wqu.unite(1, 0);  printf("unite(1,0): "); printset(wqu.id);
+    wqu.unite(2, 0);  printf("unite(2,0): "); printset(wqu.id);
+    wqu.unite(0, 3);  printf("unite(0,3): "); printset(wqu.id);
+    wqu.unite(4, 5);  printf("unite(4,5): "); printset(wqu.id);
+    wqu.unite(5, 6);  printf("unite(5,6): "); printset(wqu.id);
+    wqu.unite(7, 8);  printf("unite(7,8): "); printset(wqu.id);
+    
+    if (wqu.find(0, 3)) printf("find: 0 and 3 %s", "in the same set!\n");
+    if (wqu.find(4, 9)) printf("find: 4 and 9 %s", "in the same set!\n");
+
+    /*weighted quick union with path compression*/
+    WQUPC wqupc;
+    printf("\n\nweighted quick union with path compression: \n\n");
+    wqupc.wqu_pc();  printf("%s", "original:   ");   printset(wqupc.id);
+    
+    wqupc.unite(1, 0);  printf("unite(1,0): "); printset(wqupc.id);
+    wqupc.unite(2, 0);  printf("unite(2,0): "); printset(wqupc.id);
+    wqupc.unite(0, 3);  printf("unite(0,3): "); printset(wqupc.id);
+    wqupc.unite(4, 5);  printf("unite(4,5): "); printset(wqupc.id);
+    wqupc.unite(5, 6);  printf("unite(5,6): "); printset(wqupc.id);
+    wqupc.unite(7, 8);  printf("unite(7,8): "); printset(wqupc.id);
+    
+    if (wqupc.find(0, 3)) printf("find: 0 and 3 %s", "in the same set!\n");
+    if (wqupc.find(4, 9)) printf("find: 4 and 9 %s", "in the same set!\n");
+}
