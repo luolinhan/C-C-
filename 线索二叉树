@@ -1,0 +1,199 @@
+/*******************************************************************************
+/* <PRE>
+/* 版权所有    : -
+/* 模块名      : 树
+/* 文件名      : biThrTree.cpp
+/* 功能描述    : 线索二叉树的表示与实现
+/* 作者        : <xxx>
+/* 版本        : 1.0
+/* -----------------------------------------------------------------------------
+/* 备注        : 输入示例与输出结果
+/* 
+/* e.g. input  : ABD###CE#F###
+/* bi-tree     :
+/*                 A
+/*                / \
+/*               B   C
+/*              /   /
+/*             D   E
+/*                  \
+/*                   F
+/* 
+/* inorder thread traverse: D B A E F C
+/* -----------------------------------------------------------------------------
+/* 修改记录    :
+/* 日 期        版本     修改人        修改内容
+/* 2011/01/01   1.0      <xxx>         创建
+/* </PRE>
+*******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+
+/******************************************************************************
+/* 数据类型和常量定义
+/******************************************************************************/
+#define OK           1
+#define ERROR        0
+#define OVERFLOW    -2
+
+typedef int Status;
+typedef int TElemType;
+
+/* 二叉树的二叉线索存储表示 */
+typedef enum PointerTag { Link, Thread }; /* Link==0: 指针, Thread==1: 线索 */
+
+
+/******************************************************************************
+/* 数据结构定义
+/******************************************************************************/
+typedef struct BiThrNode {
+    TElemType data;
+    struct BiThrNode *lchild, *rchild; /* 左右孩子指针 */
+    PointerTag LTag, RTag;             /* 左右标志 */
+} BiThrNode, *BiThrTree;
+
+
+/******************************************************************************
+/* 全局变量声明
+/******************************************************************************/
+static BiThrNode *pre = NULL; //保存线索化过程中的前驱结点
+
+
+/******************************************************************************
+/* 函数原型声明
+/******************************************************************************/
+void InThreading(BiThrTree p);
+
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : Visit
+/* 功能     : 打印节点数据
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status Visit(TElemType e)
+{
+    printf("%c", e);
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InOrderTraverse_Thr
+/* 功能     : 中序遍历二叉线索树
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 中序遍历二叉线索树T的非递归算法, T指向头结点, 头结点的左链lchild指向根结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status InOrderTraverse_Thr(BiThrTree T, Status (*Visit)(TElemType e)) {
+    BiThrNode *p = T->lchild;          //p指向根结点
+    while (p != T) {                   //空树或遍历结束时, p==T
+        while (p->LTag == Link) p = p->lchild;
+        if (!Visit(p->data)) return ERROR; //访问其左子树为空的结点
+        while (p->RTag == Thread && p->rchild != T) {
+            p = p->rchild; Visit(p->data);  //访问后续结点
+        }
+        p = p->rchild;
+    }
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InOrderThreading
+/* 功能     : 中序线索化二叉树
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 中序遍历二叉树T, 并将其中序线索化, Thrt指向头结点
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status InOrderThreading(BiThrTree &Thrt, BiThrTree T) {
+    if (!(Thrt = (BiThrTree)malloc(sizeof(BiThrNode)))) exit(OVERFLOW);
+    Thrt->LTag = Link; Thrt->RTag = Thread;  //建立头结点
+    Thrt->rchild = Thrt;                     //右指针回指
+    if (!T) Thrt->lchild = Thrt;             //右二叉树为空, 则左指针回指
+    else {
+        Thrt->lchild = T; pre = Thrt;
+        InThreading(T);                      //中序遍历进行中序线索化
+        pre->rchild = Thrt;  pre->RTag = Thread; //最后一个结点线索化
+        Thrt->rchild = pre;
+    }
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : InThreading
+/* 功能     : 中序线索化
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void InThreading(BiThrTree p) {
+    if (p) {
+        InThreading(p->lchild);  //左子树线索化
+        if (!p->lchild) { p->LTag = Thread; p->lchild = pre; } //前驱线索
+        if (!pre->rchild) { pre->RTag = Thread; pre->rchild = p; } //后继线索
+        pre = p;                   //保持pre指向p的前驱
+        InThreading(p->rchild);  //右子树线索化
+    }
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : CreateBiTree
+/* 功能     : 创建二叉树
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : 前序方式创建
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+Status CreateBiTree(BiThrTree &T)
+{
+    char ch = getchar();
+    if('#' == ch) T = NULL;
+    else {
+        if(!(T = (BiThrNode *)malloc(sizeof(BiThrNode)))) exit(OVERFLOW);
+        T->data = ch;             //生成根结点
+        T->LTag = Link;
+        T->RTag = Link;
+        CreateBiTree(T->lchild);  //构造左子树
+        CreateBiTree(T->rchild);  //构造右子树
+    }
+    return OK;
+}
+
+/*******************************************************************************
+/* <FUNC>
+/* 函数名   : main
+/* 功能     : 测试函数
+/* 参数     : -
+/* 返回值   : -
+/* 备注     : -
+/* 作者     : <xxx>
+/* </FUNC>
+*******************************************************************************/
+void main()
+{
+    BiThrTree ThrT = NULL;    BiThrTree T = NULL;
+    CreateBiTree(T);
+
+    //中序遍历二叉树并线索化
+    if (OK == InOrderThreading(ThrT, T)) printf("InOrder Threading Finished!\n");
+
+    //中序遍历线索二叉树
+    printf("InOrder Thread Traverse: ");
+    InOrderTraverse_Thr(ThrT, Visit);
+
+    printf("\n");
+}
